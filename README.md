@@ -7,6 +7,7 @@ Example of service deployment using Terraform, Kubernetes and GitLab CI.
 
 - Project hosted on GitLab public service. Branches `dev, test, master` are used as a switch between target environments, where `master` is considered as *production*. Merge requests between branches are staging process with necessary approvals via [CODEOWNERS](https://docs.gitlab.com/ee/user/project/code_owners.html).
 - Kubernetes cluster running in Google Cloud Platform - each cluster with names (`my-cluster-*dev*`, `my-cluster-*test*` etc.) represents one environment.
+- During pipeline run, branch switch is realized by $CI_COMMIT_REF_NAME variable - which contains branch (or tag) name. This is used for selecting right Kubernetes cluster, to select Terraform workspace and to select correct variable file for Terraform during deployment phase.
 - Each service has it's own repository similar to this one, containing application code, tests and also Terraform code describing the service itself (normally imported as Terraform module from central repository).
 
 # Required variables set on GitLab CI pipeline parameter store
