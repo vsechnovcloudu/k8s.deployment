@@ -12,8 +12,6 @@ build:
     # Login to your image registry.
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
-    # Check if image with identical tag doesn't exists.
-    - docker pull $CONTAINER_IMAGE:latest || true
     # Build and tag with commit SHA.
     - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest .
     # Push to Docker image registry - this could be split. Push 'lastest' for further tests, but push '$CI_COMMIT_SHA' in case of planned automatic deployment.
