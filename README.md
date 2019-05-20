@@ -1,7 +1,11 @@
 Service deployment to Kubernetes
 ================================
 
-Example of service deployment using Terraform, Kubernetes and GitLab CI.
+Example of service deployment using Terraform, Kubernetes and GitLab CI.  
+
+Whole idea is to allow developers to create and deploy new code as fast & reliable as possible, while they do not have to care about underlying infrastructure. DevOps teams maintains Kubernetes nodes, making sure there is always just right amount of resources allocated - but each application / service has it's own, independent lifecycle. The repository represents basic structure of the code.
+
+Next step is to isolate Terraform code for service description into module, which will be used by multiple teams - for sake of clarity in this sample repository we put everything to one pile.
 
 # Prerequisities / assumptions
 
