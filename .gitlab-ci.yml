@@ -1,0 +1,51 @@
+variables:
+  # Name of the image based on GitLab repository name.
+  CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+build:
+  stage: build
+  # Your build image goes here.
+  image: docker/docker
+  before_script:
+    # Login to your image registry.
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  script:
+    # Check if image with identical tag doesn't exists.
+    - docker pull $CONTAINER_IMAGE:latest || true
+    # Build and tag with commit SHA.
+    - docker build --cache-from $CONTAINER_IMAGE:latest --tag $CONTAINER_IMAGE:$CI_COMMIT_SHA --tag $CONTAINER_IMAGE:latest .
+    # Push to Docker image registry - this could be split. Push 'lastest' for further tests, but push '$CI_COMMIT_SHA' in case of planned automatic deployment.
+    - docker push $CONTAINER_IMAGE:$CI_COMMIT_SHA
+    - docker push $CONTAINER_IMAGE:latest
+
+test:
+  stage: test
+  script:
+    - echo Your application tests goes here...
+
+deploy:
+    stage: deploy
+    image:
+        # Your tool image - should contain Google Cloud SDK/CLI and Terraform
+        name: wpengine/terraform:terraform-0.11.13
+    script:
+        # Register path to GCP auth JSON file. Must be uploaded in variable store on GitLab side with name GCP_SERVICE_ACCOUNT_FILE.
+        - export GOOGLE_APPLICATION_CREDENTIALS=$GCP_SERVICE_ACCOUNT_FILE
+        # Login to Google Cloud Platform - to access bucket with state files for Terraform.
+        - gcloud auth activate-service-account --key-file=$GCP_SERVICE_ACCOUNT_FILE
+        # Get Kubernetes config for target environment.
+        - gcloud container clusters get-credentials my-cluster-$CI_COMMIT_REF_NAME --zone europe-west3-a --project my-project
+        - cd terraform &&  terraform init
+        # Select Terraform workspace - this assumes workspaces are created manually in advance for all environments (dev, test, prod)
+        - terraform workspace select $CI_COMMIT_REF_NAME
+        # Apply with separated var file for each branch. We also inject image name and tag variables - as generated from pipeline.
+        - terraform apply -var-file=tfvars/$CI_COMMIT_REF_NAME.tfvars -var tag=$CI_COMMIT_SHA -var image=$CONTAINER_IMAGE --auto-approve
+    environment:
+        name: prodlike
+    only:
+        # Protected branches = environments. By adding branches you also select different Terraform workspace above (see line 41).
+        - dev
+        - test
+        - master
