@@ -1,0 +1,4 @@
+# Dummy owner file - define here, who has to approve a merge request, before it can be merged into protected branch.
+# Assumption - protected branches are master, dev and test.
+
+* @the-codeowner
